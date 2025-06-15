@@ -1,0 +1,39 @@
+version: "3.3"
+
+services:
+  nestjs_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    volumes:
+      - .:/usr/src/app
+    env_file:
+      - .env
+    command: ["/wait-for.sh", "mysql:3306", "--", "npm", "run", "start:dev"]
+    ports:
+      - 8000:8000
+    depends_on:
+      - mysql
+    networks:
+      - backend-networks
+
+  mysql:
+    image: mysql:8.0
+    container_name: my-mysql-container
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: didgksehd
+      MYSQL_DATABASE: denode
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - backend-networks
+
+volumes:
+  mysql-data:
+
+networks:
+  backend-networks:
