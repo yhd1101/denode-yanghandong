@@ -28,10 +28,18 @@ export class UserService {
     return newSignup;
   }
 
+  async getUserById(id: string) {
+    const user = await this.userRepository.findOneBy({id});
+    if (!user) {
+      throw new NotFoundException('No user id');
+    }
+    return user;
+  }
+
   async getUserByEmail(email: string) {
     const user = await this.userRepository.findOneBy({ email});
     if (!user) {
-      throw new NotFoundException('No user Email')
+      throw new NotFoundException('No user email')
     }
     return user;
   }
