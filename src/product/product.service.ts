@@ -1,0 +1,35 @@
+import { Injectable } from '@nestjs/common';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Product } from './entities/product.entity';
+import { Repository } from 'typeorm';
+import { User } from 'src/user/entities/user.entity';
+import { instanceToPlain } from 'class-transformer';
+
+@Injectable()
+export class ProductService {
+  constructor(
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>,
+  ) {}
+
+  async createProduct(createProductDto: CreateProductDto, user: User) {
+    const newProduct = await this.productRepository.create({
+      ...createProductDto,
+      createdBy: user,
+    });
+
+    await this.productRepository.save(newProduct);
+    return instanceToPlain(newProduct);
+  }
+
+  async getProductByUser(user: User) {
+    const myProducts = await this.productRepository.find({
+      where: {createdBy : { id: user.id}},
+      order: {createdAt: 'DESC'},
+    });
+
+    return instanceToPlain(myProducts);
+  }
+}

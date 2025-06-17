@@ -5,13 +5,15 @@ import { DatabaseModule } from './database/database.module';
 import { AppConfigModule } from './common/config/config.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { ProductModule } from './product/product.module';
 
 @Module({
   imports: [
     AppConfigModule,
     DatabaseModule,
     UserModule,
-    AuthModule
+    AuthModule,
+    ProductModule
   ],
   controllers: [AppController],
   providers: [AppService],
