@@ -4,6 +4,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class UserService {
@@ -24,8 +25,7 @@ export class UserService {
 
     const newSignup =  await this.userRepository.create(createUserDto);
     await this.userRepository.save(newSignup);
-    newSignup.password = undefined;
-    return newSignup;
+    return instanceToPlain(newSignup);
   }
 
   async getUserById(id: string) {

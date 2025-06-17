@@ -13,7 +13,7 @@ export class LoginUserDto{
         description: '패스워드',
         default: 'a1234567!',
       })
-      @IsString()
-      password: string;
+    @IsString()
+    password: string;
 
 }

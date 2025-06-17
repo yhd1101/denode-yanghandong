@@ -1,7 +1,9 @@
 import { CommonEntity } from "src/common/entities/common.entity";
-import { BeforeInsert, Column, Entity } from "typeorm";
+import { BeforeInsert, Column, Entity, OneToMany } from "typeorm";
 import * as bcrypt from 'bcryptjs'; 
 import { HttpException, HttpStatus, InternalServerErrorException } from "@nestjs/common";
+import { Product } from "src/product/entities/product.entity";
+import { Exclude } from "class-transformer";
 
 @Entity()
 export class User extends CommonEntity{
@@ -12,7 +14,12 @@ export class User extends CommonEntity{
     public email: string;
 
     @Column()
+    @Exclude()
     public password: string;
+
+    @OneToMany(() => (Product), (product: Product) => product.createdBy)
+    public products: Product[];
+
 
 
     @BeforeInsert()

@@ -22,10 +22,11 @@ export class CreateUserDto {
         description: '패스워드 최소 8자리 및 특수문자 입력해야합니다.',
         default: 'a1234567!',
       }) //swag적용
-      @IsString()
-      @MinLength(8) 
-      @Matches(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,}$/)
-      password?: string;
+    @IsString()
+    @MinLength(8) 
+    @Matches(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,}$/)
+
+    password?: string;
 
 
 }
