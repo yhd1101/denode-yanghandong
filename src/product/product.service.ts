@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -15,6 +15,15 @@ export class ProductService {
   ) {}
 
   async createProduct(createProductDto: CreateProductDto, user: User) {
+    const exits = await this.productRepository.findOne({
+      where: {
+        name :createProductDto.name,
+        createdBy : {id : user.id},
+      }
+    })
+    if (exits) {
+      throw new BadRequestException('Product with the same name already exists.');
+    }
     const newProduct = await this.productRepository.create({
       ...createProductDto,
       createdBy: user,
