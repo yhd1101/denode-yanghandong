@@ -6,6 +6,8 @@ import { AppConfigModule } from './common/config/config.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { ProductModule } from './product/product.module';
+import { InventoryModule } from './inventory/inventory.module';
+import { InventoryHistoryModule } from './inventory-history/inventory-history.module';
 
 @Module({
   imports: [
@@ -13,7 +15,9 @@ import { ProductModule } from './product/product.module';
     DatabaseModule,
     UserModule,
     AuthModule,
-    ProductModule
+    ProductModule,
+    InventoryModule,
+    InventoryHistoryModule
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -4,6 +4,8 @@ import * as bcrypt from 'bcryptjs';
 import { HttpException, HttpStatus, InternalServerErrorException } from "@nestjs/common";
 import { Product } from "src/product/entities/product.entity";
 import { Exclude } from "class-transformer";
+import { Inventory } from "src/inventory/entities/inventory.entity";
+import { InventoryHistory } from "src/inventory-history/entities/inventory-history.entity";
 
 @Entity()
 export class User extends CommonEntity{
@@ -19,6 +21,12 @@ export class User extends CommonEntity{
 
     @OneToMany(() => (Product), (product: Product) => product.createdBy)
     public products: Product[];
+
+    @OneToMany(() => (Inventory), (inventory: Inventory) => inventory.createdBy)
+    public inventory: Inventory[];
+
+    @OneToMany(() => (InventoryHistory), (inventoryHistory: InventoryHistory) => inventoryHistory.createdBy)
+    public inventoryHistory: InventoryHistory[];
 
 
 
