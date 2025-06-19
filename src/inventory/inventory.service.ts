@@ -111,7 +111,7 @@ export class InventoryService {
         await manager.save(inventory);
         lastUsedInventory = inventory;
 
-        product.stock -= createOutInventoryDto.quantity;
+        product.stock -= deduct; 
         const history = manager.create(InventoryHistory, {
           product,
           quantity: deduct,
