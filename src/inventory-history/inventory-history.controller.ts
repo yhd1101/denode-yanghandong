@@ -16,7 +16,7 @@ export class InventoryHistoryController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: '입출고 히스토리',
-    description: '제품 입출고 히스토리를 조회합니다. 각 기록에는 입출고된 수량(quantity), 유통기한(expirationDate), 입출고 타입(IN/OUT), 기록 생성자(createdBy), 해당 시점의 전체 재고 수량(stockAfter)이 포함됩니다.'
+    description: '제품 입출고 히스토리를 조회합니다. 각 기록에는 입출고된 수량(quantity), 유통기한(expirationDate), 입출고 타입(IN/OUT), 해당 시점의 전체 재고 수량(stockAfter), 그리고 관련 제품 정보(product)가 포함됩니다. product에 포함된 stock은 최신 재고 상태를 나타냅니다.'
   })
   @ApiBearerAuth('access-token')
   @ApiResponse({ status: 200, description: '조회 성공' })
