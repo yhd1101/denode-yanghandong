@@ -1,26 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { CreateInventoryHistoryDto } from './dto/create-inventory-history.dto';
 import { UpdateInventoryHistoryDto } from './dto/update-inventory-history.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { InventoryHistory } from './entities/inventory-history.entity';
+import { Repository } from 'typeorm';
+import { User } from 'src/user/entities/user.entity';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class InventoryHistoryService {
-  create(createInventoryHistoryDto: CreateInventoryHistoryDto) {
-    return 'This action adds a new inventoryHistory';
-  }
+  constructor(
+    @InjectRepository(InventoryHistory)
+    private readonly inventoryHistoryRepository: Repository<InventoryHistory>,
+  ){}
 
-  findAll() {
-    return `This action returns all inventoryHistory`;
+  async getAllInventoryHistory(user: User) {
+    return await this.inventoryHistoryRepository.find({
+      where: { createdBy: { id: user.id } },
+      relations: ['product'],
+      order: { createdAt: 'DESC' },
+    });
   }
-
-  findOne(id: number) {
-    return `This action returns a #${id} inventoryHistory`;
-  }
-
-  update(id: number, updateInventoryHistoryDto: UpdateInventoryHistoryDto) {
-    return `This action updates a #${id} inventoryHistory`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} inventoryHistory`;
-  }
+  
 }
