@@ -1,6 +1,4 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateInventoryDto } from './dto/create-inventory.dto';
-import { UpdateInventoryDto } from './dto/update-inventory.dto';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { Inventory } from './entities/inventory.entity';
 import { DataSource, Repository } from 'typeorm';
@@ -11,6 +9,8 @@ import { InventoryHistoryType } from 'src/inventory-history/entities/inventory-t
 import { PageOptionsDto } from 'src/common/dtos/page-options.dto';
 import { PageMetaDto } from 'src/common/dtos/page-meta.dto';
 import { PageDto } from 'src/common/dtos/page.dto';
+import { CreateInventoryDto } from './dto/create-inventory.dto';
+import { CreateOutInventoryDto } from './dto/create-out-inventory.dto';
 
 @Injectable()
 export class InventoryService {
@@ -29,29 +29,31 @@ export class InventoryService {
       });
 
       if(!product) {
-        throw new NotFoundException('Product no found');''
+        throw new NotFoundException('제품을 찾을 수 없습니다.');
       }
 
       let inventory = await manager.findOne(Inventory, {
-        where: { product: { id : product.id}},
-        lock: { mode: 'pessimistic_write'},
+        where: {
+          product: { id: product.id },
+          expirationDate: createInventoryDto.expirationDate ?? null,
+        },
+        lock: { mode: 'pessimistic_write' },
       });
 
       if (inventory) {
         inventory.quantity += createInventoryDto.quantity;
-        if (createInventoryDto.expirationDate) {
-          inventory.expirationDate = createInventoryDto.expirationDate;
-        }
       } else {
         inventory = manager.create(Inventory, {
           product,
           quantity: createInventoryDto.quantity,
           expirationDate: createInventoryDto.expirationDate,
-          createdBy: user
+          createdBy: user,
         });
       }
 
       await manager.save(inventory);
+      product.stock += createInventoryDto.quantity;
+      await manager.save(product);
 
       const history = manager.create(InventoryHistory, {
         product,
@@ -59,6 +61,7 @@ export class InventoryService {
         expirationDate: createInventoryDto.expirationDate,
         createdBy: user,
         type: InventoryHistoryType.IN,
+        stockAfter: product.stock
       });
 
       await manager.save(history);
@@ -67,43 +70,68 @@ export class InventoryService {
     })
   }
 
-  async createOutboundInventory(createInventoryDto: CreateInventoryDto, user: User) {
+  async createOutboundInventory(createOutInventoryDto: CreateOutInventoryDto, user: User) {
     return await this.dataSource.transaction(async (manager) => {
       const product = await manager.findOne(Product, {
-        where: { id: createInventoryDto.productId },
+        where: { id: createOutInventoryDto.productId },
         lock: { mode: 'pessimistic_write' },
       });
   
       if (!product) {
-        throw new NotFoundException('Product not found');
+        throw new NotFoundException('제품을 찾을 수 없습니다.');
       }
   
-      const inventory = await manager.findOne(Inventory, {
+      if (product.stock < createOutInventoryDto.quantity) {
+        throw new BadRequestException('재고가 부족합니다.');
+      }
+  
+      let remaining = createOutInventoryDto.quantity;
+  
+      const inventories = await manager.find(Inventory, {
         where: { product: { id: product.id } },
+        order: {
+          expirationDate: 'ASC',
+          createdAt: 'ASC',
+        },
         lock: { mode: 'pessimistic_write' },
       });
   
-      if (!inventory || inventory.quantity < createInventoryDto.quantity) {
-        throw new BadRequestException('Not enough inventory to fulfill the request');
+      let lastUsedInventory: Inventory | null = null;
+  
+      for (const inventory of inventories) {
+        if (remaining === 0) break;
+  
+        const deduct = Math.min(remaining, inventory.quantity);
+        inventory.quantity -= deduct;
+        remaining -= deduct;
+  
+        await manager.save(inventory);
+        lastUsedInventory = inventory;
+
+        product.stock -= createOutInventoryDto.quantity;
+        const history = manager.create(InventoryHistory, {
+          product,
+          quantity: deduct,
+          expirationDate: inventory.expirationDate,
+          createdBy: user,
+          type: InventoryHistoryType.OUT,
+          stockAfter: product.stock
+        });
+  
+        await manager.save(history);
       }
   
-      inventory.quantity -= createInventoryDto.quantity;
+      if (remaining > 0) {
+        throw new BadRequestException('출고 가능한 재고가 충분하지 않습니다.');
+      }
   
-      await manager.save(inventory);
+
+      await manager.save(product);
   
-      const history = manager.create(InventoryHistory, {
-        product,
-        quantity: createInventoryDto.quantity,
-        expirationDate: createInventoryDto.expirationDate,
-        createdBy: user,
-        type: InventoryHistoryType.OUT,
-      });
-  
-      await manager.save(history);
-  
-      return inventory;
+      return lastUsedInventory; // 마지막으로 차감한 재고 1건 반환
     });
   }
+  
 
   async getAllInventory(pageOptionsDto: PageOptionsDto, user: User) {
     const queryBuilder = await this.inventoryRepository.createQueryBuilder('inventory');

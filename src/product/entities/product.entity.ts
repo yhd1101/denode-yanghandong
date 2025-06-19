@@ -13,10 +13,10 @@ export class Product extends CommonEntity{
 
     @Column({type: 'enum', enum: Unit, nullable: true})
     public unit?: Unit;
-
-    // @Column({default: true})
-    // public isActive: boolean;
-
+    
+    @Column({ default: 0 })
+    stock: number;
+    
     @ManyToOne(() => User, (user: User) => user.products)
     @JoinColumn()
     public createdBy: User;

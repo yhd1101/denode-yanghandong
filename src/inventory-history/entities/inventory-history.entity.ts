@@ -22,4 +22,7 @@ export class InventoryHistory extends CommonEntity {
     @ManyToOne(() => (User), (user: User) => user.inventoryHistory)
     @JoinColumn()
     public createdBy: User;
+
+    @Column()
+    public stockAfter: number; // 입출고 이후 총 재고량
 }
