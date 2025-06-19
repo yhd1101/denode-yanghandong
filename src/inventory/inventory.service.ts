@@ -11,6 +11,7 @@ import { PageMetaDto } from 'src/common/dtos/page-meta.dto';
 import { PageDto } from 'src/common/dtos/page.dto';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { CreateOutInventoryDto } from './dto/create-out-inventory.dto';
+import { InventoryResponseDto } from './dto/inventory-response.dto';
 
 @Injectable()
 export class InventoryService {
@@ -66,7 +67,7 @@ export class InventoryService {
 
       await manager.save(history);
 
-      return inventory;
+      return new InventoryResponseDto(inventory);
     })
   }
 
@@ -86,6 +87,7 @@ export class InventoryService {
       }
   
       let remaining = createOutInventoryDto.quantity;
+      let currentStock = product.stock;
   
       const inventories = await manager.find(Inventory, {
         where: { product: { id: product.id } },
@@ -104,6 +106,7 @@ export class InventoryService {
         const deduct = Math.min(remaining, inventory.quantity);
         inventory.quantity -= deduct;
         remaining -= deduct;
+        currentStock -= deduct;
   
         await manager.save(inventory);
         lastUsedInventory = inventory;
