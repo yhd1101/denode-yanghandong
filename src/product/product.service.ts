@@ -22,7 +22,7 @@ export class ProductService {
       }
     })
     if (exits) {
-      throw new BadRequestException('Product with the same name already exists.');
+      throw new BadRequestException('이미 동일한 이름의 제품이 존재합니다.');
     }
     const newProduct = await this.productRepository.create({
       ...createProductDto,

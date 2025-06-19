@@ -7,8 +7,8 @@ export class CreateProductDto {
     description: '제품 이름 (예: 국소마취제, 치실, 니들 팩 등)',
     example: '국소마취제',
   })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: '제품은 문자열이어야 합니다.' })
+  @IsNotEmpty({ message: '제품을 꼭 입력해주세요.' })
   name: string;
 
   @ApiPropertyOptional({
@@ -18,6 +18,6 @@ export class CreateProductDto {
     enumName: 'Unit',
   })
   @IsOptional()
-  @IsEnum(Unit)
+  @IsEnum(Unit, { message: '제품 단위는 PACK, BOX 등 Unit 열거형 중 하나여야 합니다.' })
   unit?: Unit;
 }
