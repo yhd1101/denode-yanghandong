@@ -19,7 +19,7 @@ export class AuthService {
     const isPasswordMatch = await user.validatePassword(loginuserDto.password);
 
     if (!isPasswordMatch) {
-      throw new HttpException('Password do not matched',  HttpStatus.BAD_REQUEST);
+      throw new HttpException('비밀번호가 일치하지 않습니다',  HttpStatus.BAD_REQUEST);
     }
     user.password = undefined;
     return user;

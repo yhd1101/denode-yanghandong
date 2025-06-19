@@ -20,7 +20,7 @@ export class UserService {
       where: {email: createUserDto.email},
     });
     if (user) {
-      throw new BadRequestException('User email exits');
+      throw new BadRequestException('이메일이 존재합니다');
     }
 
     const newSignup =  await this.userRepository.create(createUserDto);
@@ -39,7 +39,7 @@ export class UserService {
   async getUserByEmail(email: string) {
     const user = await this.userRepository.findOneBy({ email});
     if (!user) {
-      throw new NotFoundException('No user email')
+      throw new NotFoundException('존재하지 않는 이메일 입니다')
     }
     return user;
   }
