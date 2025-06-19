@@ -1,73 +1,77 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## ✅ 구현 체크리스트
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+### 📌 기획 요구 사항
 
-## Description
+* [x] 회원가입과 로그인(JWT 활용) 기능
+* [x] 제품(입고하고자 하는 제품) 등록
+* [x] 유통기한이 포함된 재고 입고 및 출고 (유통기한이 없을 수도 있음)
+* [x] 보유 재고를 요청한 개수씩 나누어 페이지별로 조회
+* [x] 입고 또는 출고에 대한 히스토리 조회
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### 📌 개발 요구 사항
 
-## Installation
+* [x] 한 가지 재고에 대해 동시에 여러 건의 입고 또는 출고가 발생하더라도 모두 잘 처리되도록 구현
+* [x] NestJS, TypeORM, MySQL, Docker, Docker Compose를 빠짐없이 활용
+* [x] 서버 포트는 3000을 사용
+* [x] DB(MySQL)와 백엔드 서버(NestJS)는 Docker, Docker Compose를 활용하여 실행 가능하도록 설정
+* [x] 모든 요청과 응답은 `application/json` 타입으로 구현
+* [x] Swagger를 통해 API 확인 및 실행 가능하도록 구현
+
+---
+
+## 🛠 서버 실행 방법
 
 ```bash
-$ npm install
+docker-compose up -d
 ```
 
-## Running the app
+---
 
-```bash
-# development
-$ npm run start
+## 📁 환경 변수 설정
 
-# watch mode
-$ npm run start:dev
+`.env` 파일은 별도 압축파일로 제출하였습니다.
+루트 경로에 직접 `.env` 파일을 생성하거나, 제출된 압축파일의 `.env`를 루트로 옮겨 사용하시면 됩니다.
 
-# production mode
-$ npm run start:prod
+---
+
+## 🔒 동시성 제어 방식 및 비관적 락 적용 이유
+
+재고 입출고 로직은 동시에 여러 사용자가 요청을 보낼 수 있어, 데이터 정합성 보장을 위한 동시성 제어가 필요합니다.
+이를 위해 `TypeORM`의 **비관적 락(`pessimistic_write`)** 을 사용하였습니다.
+
+### ✅ 적용 방법
+
+* `dataSource.transaction()`으로 트랜잭션을 생성하고, 트랜잭션 내부에서 `pessimistic_write` 락을 걸어 처리합니다.
+* 입고 시:
+
+  * 제품 및 유통기한 기준 재고에 락을 걸고 수량을 더하거나 새로 생성
+  * 제품의 전체 재고 수량을 갱신
+  * 입고 이력을 기록
+* 출고 시:
+
+  * 제품 및 보유 재고 목록에 락을 걸고, 오래된 재고부터 차감
+  * 제품의 전체 재고 수량을 갱신
+  * 출고 이력을 기록
+
+### ✅ 사용 이유
+
+* 재고는 수량 계산이 중요한 민감한 도메인이며, **정확한 정합성 확보가 필수**입니다.
+* 여러 요청이 동시에 들어올 경우 Race Condition이 발생할 수 있으므로, **락을 통해 중복 차감, 음수 재고 등의 문제를 방지**해야 합니다.
+* 낙관적 락은 충돌 발생 시 롤백이 필요하지만, 비관적 락은 **처음부터 잠금을 걸어 안정성을 확보**할 수 있어 이 과제의 목적에 더 적합하다고 판단했습니다.
+* `QueryRunner` 대신 `dataSource.transaction()`을 사용하여 NestJS와 TypeORM의 표준 방식에 맞게 구현했습니다.
+
+---
+
+## 📄 Swagger 문서
+
+API 문서는 Swagger를 통해 확인 및 테스트할 수 있습니다.
+서버 실행 후 아래 주소에서 확인 가능합니다:
+
+```
+http://localhost:3000/api-docs
 ```
 
-## Test
+---
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
+필요하면 ERD나 테스트 시나리오 항목도 추가 도와드릴 수 있습니다.
