@@ -1,10 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RequestWithUserInterface } from 'src/auth/requestWithUser.interface';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { PageOptionsDto } from 'src/common/dtos/page-options.dto';
+import { PageDto } from 'src/common/dtos/page.dto';
+import { Inventory } from './entities/inventory.entity';
 
 @Controller('inventory')
 @ApiTags('inventory')
@@ -27,4 +30,10 @@ export class InventoryController {
     return outboundInventory;
   }
 
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  async getAllInventory(@Req() req: RequestWithUserInterface, @Query() pageOptionsDto: PageOptionsDto): Promise<PageDto<Inventory>> {
+    return await this.inventoryService.getAllInventory(pageOptionsDto, req.user);
+  }
 }

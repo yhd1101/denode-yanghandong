@@ -8,6 +8,9 @@ import { User } from 'src/user/entities/user.entity';
 import { Product } from 'src/product/entities/product.entity';
 import { InventoryHistory } from 'src/inventory-history/entities/inventory-history.entity';
 import { InventoryHistoryType } from 'src/inventory-history/entities/inventory-type.enum';
+import { PageOptionsDto } from 'src/common/dtos/page-options.dto';
+import { PageMetaDto } from 'src/common/dtos/page-meta.dto';
+import { PageDto } from 'src/common/dtos/page.dto';
 
 @Injectable()
 export class InventoryService {
@@ -44,7 +47,7 @@ export class InventoryService {
           product,
           quantity: createInventoryDto.quantity,
           expirationDate: createInventoryDto.expirationDate,
-          user,
+          createdBy: user
         });
       }
 
@@ -54,7 +57,7 @@ export class InventoryService {
         product,
         quantity: createInventoryDto.quantity,
         expirationDate: createInventoryDto.expirationDate,
-        user,
+        createdBy: user,
         type: InventoryHistoryType.IN,
       });
 
@@ -92,7 +95,7 @@ export class InventoryService {
         product,
         quantity: createInventoryDto.quantity,
         expirationDate: createInventoryDto.expirationDate,
-        user,
+        createdBy: user,
         type: InventoryHistoryType.OUT,
       });
   
@@ -100,6 +103,23 @@ export class InventoryService {
   
       return inventory;
     });
+  }
+
+  async getAllInventory(pageOptionsDto: PageOptionsDto, user: User) {
+    const queryBuilder = await this.inventoryRepository.createQueryBuilder('inventory');
+    queryBuilder.leftJoinAndSelect('inventory.product','product');
+
+    await queryBuilder
+      .orderBy('inventory.createdAt', pageOptionsDto.order)
+      .skip(pageOptionsDto.skip)
+      .take(pageOptionsDto.size);
+    
+    const itemCount = await queryBuilder.getCount();
+    const { entities } = await queryBuilder.getRawAndEntities();
+
+    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto});
+
+    return new PageDto(entities, pageMetaDto);
   }
   
 }
